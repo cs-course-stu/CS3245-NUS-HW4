@@ -1,0 +1,29 @@
+[
+    {
+        "hierachy": "Most important",
+        "courts": [
+            "SG Court of Appeal",
+            "SG Privy Council",
+            "UK House of Lords",
+            "UK Supreme Court",
+            "High Court of Australia",
+            "CA Supreme Court"
+        ]
+    },
+    {
+        "hierachy": "Important",
+        "courts": [
+            "SG High Court",
+            "Singapore International Commercial Court",
+            "HK High Court",
+            "HK Court of First Instance",
+            "UK Crown Court",
+            "UK Court of Appeal",
+            "UK High Court",
+            "Federal Court of Australia",
+            "NSW Court of Appeal",
+            "NSW Court of Criminal Appeal",
+            "NSW Supreme Court"
+        ]
+    }
+]
