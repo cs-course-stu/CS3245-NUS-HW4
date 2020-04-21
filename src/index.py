@@ -11,7 +11,6 @@ DATE = 4
 COURT = 5
 
 
-
 def usage():
     print("usage: " + sys.argv[0] + " -i directory-of-documents -d dictionary-file -p postings-file")
 
@@ -26,16 +25,12 @@ def build_index(in_dir, out_dict, out_postings):
     # nested dictionary to store dataset values
     dataset_dictionary = {}
     print(dataset_dictionary)
-    print("\n")
 
     # read input data from csv files
-    with open('testinput.csv', mode='r') as input_csv_file:
-        csv_reader = csv.reader(input_csv_file, delimiter=',', quotechar='"')
-        line_num = 0
+    with open(in_dir, mode='r') as input_csv:
+        csv_reader = csv.DictReader(input_csv)
         for line in csv_reader:
-
-            # if not header columns, read into dictionary
-            if line_num != 0:
+            # read data in dictionary
                 doc_id = line["document_id"]
                 dataset_dictionary[doc_id] = {}
                 dataset_dictionary[doc_id][TITLE] = line["title"]
@@ -44,7 +39,7 @@ def build_index(in_dir, out_dict, out_postings):
                 dataset_dictionary[doc_id][COURT] = line["court"]
 
     print(dataset_dictionary)
-    input_csv_file.close()
+    input_csv.close()
     print('indexing completed')
 
 
