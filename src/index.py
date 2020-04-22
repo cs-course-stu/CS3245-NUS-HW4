@@ -105,7 +105,7 @@ def build_index(in_dir, out_dict, out_postings):
 
     # print(dataset_dictionary)
     # print(court_field)
-    # print(date_field)
+    print(date_field)
 
     input_csv.close()
     print('indexing completed')
