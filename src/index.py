@@ -41,6 +41,10 @@ def generate_court_field(dataset_dict):
             court_field_dict[court_name] = list()
         court_field_dict[court_name].append(doc_key)
 
+    # sort doc ids in value
+    for key in court_field_dict:
+        court_field_dict[key] = sorted(court_field_dict[key])
+
     return court_field_dict
 
 
@@ -76,6 +80,10 @@ def generate_date_field(data_dict):
         if year not in date_dictionary:
             date_dictionary[year] = list()
         date_dictionary[year].append(doc_key)
+
+    # sort doc ids in value
+    for key in date_dictionary:
+        date_dictionary[key] = sorted(date_dictionary[key])
 
     return date_dictionary
 
@@ -173,7 +181,7 @@ def build_index(in_dir, out_dict, out_postings):
     dataset_dictionary = {}
 
     # Increase field_size to handle large input of csv
-    # csv.field_size_limit(sys.maxsize)
+    csv.field_size_limit(sys.maxsize)
 
     # Read input data from csv files
     with open(os.path.join(in_dir), 'r') as input_csv:
@@ -211,10 +219,6 @@ def build_index(in_dir, out_dict, out_postings):
     court_field = generate_court_field(dataset_dictionary)
     date_field = generate_date_field(dataset_dictionary)
 
-    # print(dataset_dictionary)
-    # print(court_field)
-    # print(date_field)
-
     # Convert lists in postings to numpy arrays
     convert_lists_to_nparrays(postings)
 
@@ -227,6 +231,8 @@ def build_index(in_dir, out_dict, out_postings):
 
     # Pickle dictionary
     pickle.dump(dictionary, write_dictionary)
+    pickle.dump(court_field, write_dictionary)
+    pickle.dump(date_field, write_dictionary)
 
     # Close all files
     write_dictionary.close()
