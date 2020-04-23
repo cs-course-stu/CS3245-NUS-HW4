@@ -4,3 +4,9 @@
 .DS_Store
 
 __pycache__/
+dataset.csv
+index-output.txt
+script.sh
+.idea
+venve
+test-index-output.txt
