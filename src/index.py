@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import math
 import re
+import os
 import sys
 import getopt
 import csv
@@ -172,10 +173,10 @@ def build_index(in_dir, out_dict, out_postings):
     dataset_dictionary = {}
 
     # Increase field_size to handle large input of csv
-    csv.field_size_limit(sys.maxsize)
+    # csv.field_size_limit(sys.maxsize)
 
     # Read input data from csv files
-    with open(in_dir, 'r') as input_csv:
+    with open(os.path.join(in_dir), 'r') as input_csv:
         csv_reader = csv.DictReader(input_csv)
         for line in csv_reader:
             # Initialize term frequency tracker for this document
