@@ -122,6 +122,7 @@ class Indexer:
             to_append = ".title"
         else:
             to_append = ".content"
+            self.average += len(words)
 
         # Initialise PorterStemmer
         ps = PorterStemmer()
@@ -268,7 +269,7 @@ class Indexer:
         self.convert_lists_to_nparrays()
 
         # Calculate average
-        self.average = (self.file_count * (self.file_count + 1) / 2) / self.file_count
+        self.average /= len(dataset_dictionary)
 
         # for word in sorted(postings):
         #     print(word)
