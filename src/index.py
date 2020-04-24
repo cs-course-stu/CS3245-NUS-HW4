@@ -191,17 +191,17 @@ def build_index(in_dir, out_dict, out_postings):
     dataset_dictionary = {}
 
     # Increase field_size to handle large input of csv
-    # csv.field_size_limit(sys.maxsize)
-    max_int = sys.maxsize
-    while True:
-        # decrease the maxInt value by factor 10
-        # as long as the OverflowError occurs.
-
-        try:
-            csv.field_size_limit(max_int)
-            break
-        except OverflowError:
-            max_int = int(max_int / 10)
+    csv.field_size_limit(sys.maxsize)
+    # max_int = sys.maxsize
+    # while True:
+    #     # decrease the maxInt value by factor 10
+    #     # as long as the OverflowError occurs.
+    #
+    #     try:
+    #         csv.field_size_limit(max_int)
+    #         break
+    #     except OverflowError:
+    #         max_int = int(max_int / 10)
 
     # Read input data from csv files
     with open(os.path.join(in_dir), 'r', encoding="utf8") as input_csv:
@@ -270,12 +270,12 @@ def build_index(in_dir, out_dict, out_postings):
     write_dictionary.close()
     write_postings.close()
 
-    # for word in sorted(postings):
-    #     print(word)
-    #     print("postings[word][0]", postings[word][0])
-    #     print("postings[word][1]", postings[word][1])
-    #     for doc in postings[word][2]:
-    #         print("postings[word][2][" + doc + "]", postings[word][2][doc])
+    for word in sorted(postings):
+        print(word)
+        print("postings[word][0]", postings[word][0])
+        print("postings[word][1]", postings[word][1])
+        for doc in postings[word][2]:
+            print("postings[word][2][" + doc + "]", postings[word][2][doc])
 
     print('indexing completed')
 
