@@ -52,7 +52,17 @@ def get_date_from_title(title):
     """
     Method to extract year from title
     """
+    if title is None:
+        return -1
+
     terms = title.split()
+
+    if terms is None:
+        return -1
+
+    if len(terms) < 3:
+        return -1
+
     brac_year = terms[-3]
     list_year = []
     for char in brac_year:
@@ -181,12 +191,26 @@ def build_index(in_dir, out_dict, out_postings):
     dataset_dictionary = {}
 
     # Increase field_size to handle large input of csv
-    csv.field_size_limit(sys.maxsize)
+    # csv.field_size_limit(sys.maxsize)
+    max_int = sys.maxsize
+    while True:
+        # decrease the maxInt value by factor 10
+        # as long as the OverflowError occurs.
+
+        try:
+            csv.field_size_limit(max_int)
+            break
+        except OverflowError:
+            max_int = int(max_int / 10)
 
     # Read input data from csv files
-    with open(os.path.join(in_dir), 'r') as input_csv:
+    with open(os.path.join(in_dir), 'r', encoding="utf8") as input_csv:
         csv_reader = csv.DictReader(input_csv)
         for line in csv_reader:
+
+            if line is None:
+                continue;
+
             # Initialize term frequency tracker for this document
             document_term_frequency = {}
 
@@ -201,6 +225,10 @@ def build_index(in_dir, out_dict, out_postings):
             dataset_dictionary[doc_id][DATE] = line[DATE]
             dataset_dictionary[doc_id][COURT] = line[COURT]
 
+            print("read doc from csv: ")
+            print(file_count)
+
+
             # Add words from title to postings
             update_postings(doc_id, document_term_frequency, postings, word_tokenize(dataset_dictionary[doc_id][TITLE]), True)
 
@@ -212,6 +240,10 @@ def build_index(in_dir, out_dict, out_postings):
 
             # Update collection_term_frequency
             update_collection_tf(collection_term_frequency, document_term_frequency)
+
+            print("processed doc from csv: ")
+            print(file_count)
+            print("______________________________________")
 
     # Close csv file
     input_csv.close()
@@ -238,12 +270,12 @@ def build_index(in_dir, out_dict, out_postings):
     write_dictionary.close()
     write_postings.close()
 
-    for word in sorted(postings):
-        print(word)
-        print("postings[word][0]", postings[word][0])
-        print("postings[word][1]", postings[word][1])
-        for doc in postings[word][2]:
-            print("postings[word][2][" + doc + "]", postings[word][2][doc])
+    # for word in sorted(postings):
+    #     print(word)
+    #     print("postings[word][0]", postings[word][0])
+    #     print("postings[word][1]", postings[word][1])
+    #     for doc in postings[word][2]:
+    #         print("postings[word][2][" + doc + "]", postings[word][2][doc])
 
     print('indexing completed')
 
