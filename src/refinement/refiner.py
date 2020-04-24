@@ -37,7 +37,7 @@ class Refiner:
         beta: a coefficient of Releance Feedback
     """
     def __init__(self, indexer=None, expand=False, feedback=True,
-                 alpha=0.5, beta=0.5):
+                 alpha=0.9, beta=0.1):
         self.indexer = indexer
         self.expand = expand
         self.feedback = feedback
@@ -135,12 +135,13 @@ class Refiner:
     def _feedback(self, query_infos, relevant_docs, postings_lists):
         for query_info in query_infos:
             terms = query_info.terms
-            query_info.query_vector *= self.alpha
             query_vector = query_info.query_vector
+            doc_vectors = defaultdict(lambda: np.zeros(len(terms)))
 
-            print(query_vector)
+            # step 1: multiple vector by alpha
+            query_vector *= self.alpha
 
-            # step 1: perform relevance feedback for every query
+            # step 2: get the doc vectors
             for i, term in enumerate(terms):
                 postings_list = postings_lists[term]
                 postings = postings_list[0]
@@ -153,9 +154,17 @@ class Refiner:
                     if doc not in relevant_docs:
                         continue
 
-                    weight += weights[j]
+                    doc_vectors[doc][i] = weights[j]
 
-                query_vector[i] += self.beta * weight
+            # step 2: normalize the doc vectors
+            for doc in doc_vectors:
+                doc_vector = doc_vectors[doc]
+                ratio = np.linalg.norm(doc_vector) / self.beta
+                doc_vector /= ratio * len(relevant_docs)
+                query_vector += doc_vector
+
+            # step 3: normalize the query vector
+            query_vector /= np.linalg.norm(query_vector)
 
     """ Tokenize the all the queries in the query_infos
 
@@ -283,8 +292,8 @@ if __name__ == '__main__':
         for query_info in query_infos:
             print("query_vector", query_info.query_vector)
     elif test == 'refine':
-        query_infos, _ = refiner.refine(query, [0])
+        query_infos, _ = refiner.refine(query, [0, 5])
         for query_info in query_infos:
             print("query: ", query_info.query)
-            print("is_phrase: ", query_info.is_phrase)
+            print("terms: ", query_info.terms)
             print("query_vector: ", query_info.query_vector)
