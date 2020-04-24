@@ -100,7 +100,7 @@ def generate_date_field(data_dict):
 
 def update_postings(doc_id, document_term_frequency, postings, words, is_title):
     """
-    Method parses words in given sentence and updates postings list 
+    Method parses words in given sentence and updates postings list
     """
     # Deciding suffix for zones
     if is_title:
@@ -110,7 +110,7 @@ def update_postings(doc_id, document_term_frequency, postings, words, is_title):
 
     # Initialise PorterStemmer
     ps = PorterStemmer()
-    
+
     for i in range(len(words)):
         # Pre-process word
         preprocessed_word = ps.stem(words[i]).lower()
@@ -122,7 +122,7 @@ def update_postings(doc_id, document_term_frequency, postings, words, is_title):
             postings[current_word].append([])
             postings[current_word].append([])
             postings[current_word].append({})
-        if current_word not in postings[current_word][0]:
+        if doc_id not in postings[current_word][0]:
             postings[current_word][0].append(doc_id)
             postings[current_word][1].append(None)
             postings[current_word][2][doc_id] = []
@@ -228,6 +228,12 @@ def build_index(in_dir, out_dict, out_postings):
             print("read doc from csv: ")
             print(file_count)
 
+            # Update file_count
+            file_count += 1
+            print(file_count)
+
+            # Initialize term frequency tracker for this document
+            document_term_frequency = {}
 
             # Add words from title to postings
             update_postings(doc_id, document_term_frequency, postings, word_tokenize(dataset_dictionary[doc_id][TITLE]), True)
@@ -265,17 +271,18 @@ def build_index(in_dir, out_dict, out_postings):
     pickle.dump(dictionary, write_dictionary)
     pickle.dump(court_field, write_dictionary)
     pickle.dump(date_field, write_dictionary)
+    print("pickled everything")
 
     # Close all files
     write_dictionary.close()
     write_postings.close()
 
-    for word in sorted(postings):
-        print(word)
-        print("postings[word][0]", postings[word][0])
-        print("postings[word][1]", postings[word][1])
-        for doc in postings[word][2]:
-            print("postings[word][2][" + doc + "]", postings[word][2][doc])
+    # for word in sorted(postings):
+    #     print(word)
+    #     print("postings[word][0]", postings[word][0])
+    #     print("postings[word][1]", postings[word][1])
+    #     for doc in postings[word][2]:
+    #         print("postings[word][2][" + doc + "]", postings[word][2][doc])
 
     print('indexing completed')
 
