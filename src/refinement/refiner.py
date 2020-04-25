@@ -6,8 +6,8 @@ import nltk
 import array
 import heapq
 import numpy as np
-from indexer import Indexer
-from nltk.corpus import stopwords
+# from indexer import Indexer
+from nltk.corpus import stopwords, wordnet
 from collections import defaultdict
 from nltk.stem.porter import PorterStemmer
 
@@ -119,10 +119,40 @@ class Refiner:
         # step 4: return query_infos
         return query_infos
 
-    def _expand(self, query_infos):
-        # step 1: expand every single query by using wordnet
 
-        pass
+    def _generate_thesauri(self, word, terms):
+        syn = set()
+        syn.add(word.lower())
+        for synset in wordnet.synsets(word.lower()):
+            i = 0
+            for lemma in synset.lemmas():
+                tmp_stem = self.stemmer.stem(lemma.name().lower())
+                # print(tmp_stem)
+                if (tmp_stem in terms):
+                    syn.add(lemma.name())  # add the synonyms
+                    # print(lemma.name())
+                if (len(syn) == 2):
+                    break
+                i += 1
+            if (len(syn) == 2):
+                break
+        return list(syn)
+
+    def _expand(self, query_infos, terms):
+        # step 1: expand every single query by using wordnet
+        for query_info in query_infos:
+            if (query_info.is_phrase == True):
+                tokens = [
+                    word for word in nltk.word_tokenize(query_info.query)
+                ]
+                new_query = ""
+                i = 0
+                for token in tokens:
+                    tokens[i] = self._generate_thesauri(token, terms)
+                    new_query = new_query + " ".join(tokens[i]) + " "
+                    i += 1
+                query_info.query = new_query
+        return query_infos
 
 
     """ Perform Relevance Feedback based on Rocchio Algorithm
@@ -253,7 +283,8 @@ if __name__ == '__main__':
     refiner = Refiner()
 
     query = '"Computer Science" AND Refiner can tokenize query strings into terms and tokens'
-    terms = ['refin', 'can', 'token', 'queri', 'string', 'into', 'term', 'and', 'comput', 'scienc']
+    terms = ['refin', 'can', 'token', 'queri', 'string', 'into',
+         'term', 'and', 'comput', 'scienc', 'computing_machin', 'scientific_disciplin', 'tranquil']
     counts = [1, 1, 2, 1, 1, 1, 1, 1]
     postings_lists = {
         'into'    : (np.array([0, 1, 3, 5]), np.array([1, 5, 6, 1]), [np.array([5, ])] ),
@@ -268,7 +299,7 @@ if __name__ == '__main__':
         'comput'  : (np.array([0, 3, 6, 9]), np.array([1, 3, 6, 9]), [np.array([7, ])] )
     }
 
-    test = 'refine' if len(sys.argv) == 1 else sys.argv[1]
+    test = 'expand' if len(sys.argv) == 1 else sys.argv[1]
 
     if test == '_split_query':
         query_infos = refiner._split_query(query)
@@ -297,3 +328,12 @@ if __name__ == '__main__':
             print("query: ", query_info.query)
             print("terms: ", query_info.terms)
             print("query_vector: ", query_info.query_vector)
+    elif test == 'expand':
+        query_infos = refiner._split_query(query)
+        for query_info in query_infos:
+            print("query: ", query_info.query)
+            print("is_phrase: ", query_info.is_phrase)
+
+        query_infos = refiner._expand(query_infos, terms)
+        for query_info in query_infos:
+            print("query", query_info.query)
