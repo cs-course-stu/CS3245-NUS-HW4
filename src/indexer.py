@@ -33,12 +33,12 @@ class Indexer:
         self.collection_term_frequency = {}
         self.court_field = {}
         self.date_field = {}
-        # dictionary[term][0] = idf
-        # dictionary[term][1] = location in postings.txt
+        # dictionary[term] = location in postings.txt
         self.dictionary = {}
-        # postings[term][0] = list of doc_ids
-        # postings[term][1] = list of tf values
-        # postings[term][2][doc_id] = list of positions
+        # postings[term][0] = idf
+        # postings[term][1] = list of doc_ids
+        # postings[term][2] = list of tf values
+        # postings[term][3][doc_id] = list of positions
         self.postings = {}
 
     def generate_court_field(self, dataset_dict):
@@ -209,9 +209,6 @@ class Indexer:
         then output the dictionary file and postings file
         """
         print('indexing...')
-
-        # Initialize stemmer
-        ps = PorterStemmer()
 
         # Nested dictionary to store dataset values
         dataset_dictionary = {}
