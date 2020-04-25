@@ -131,7 +131,7 @@ class Indexer:
 
         for i in range(len(words)):
             # Pre-process word
-            preprocessed_word = ps.stem(words[i]).lower()
+            preprocessed_word = ps.stem(words[i])
             current_word = preprocessed_word + to_append
             # current_word = words[i].append(toAppend)
 
@@ -188,19 +188,23 @@ class Indexer:
 
     def remove_punctuation(self, terms):
 
-        modified_term = re.sub(r"[,;@#?!&$()%°~^_.+=\"><`|}{*':/]+ *", " ", terms)
+        modified_term = re.sub(r"[,;@#?!&$()%°~^_.+=\"><`|}{*:/]+ *", " ", terms)
         return modified_term
 
     def tokenize_and_remove_stopwords(self, input):
         stop_words = set(stopwords.words('english'))
+
         token_words = word_tokenize(input)
+        lower_token_words = []
+        for words in token_words:
+            lower_token_words.append(words.lower())
+
         filtered_words = []
 
-        for word in token_words:
+        for word in lower_token_words:
             if word not in stop_words:
                 filtered_words.append(word)
 
-        print(filtered_words)
         return filtered_words
 
     def build_index(self, in_dir):
@@ -209,6 +213,9 @@ class Indexer:
         then output the dictionary file and postings file
         """
         print('indexing...')
+
+        repeated_file_count = 0
+        total_count = 0
 
         # Nested dictionary to store dataset values
         dataset_dictionary = {}
@@ -231,18 +238,28 @@ class Indexer:
             csv_reader = csv.DictReader(input_csv)
             for line in csv_reader:
 
+                total_count += 1
+                if total_count == 150:
+                    break
+
+                print("file read")
+                print(total_count)
+
                 if line is None:
                     continue
 
                 # Read data in dictionary
                 doc_id = line[DOC_ID]
+                print(doc_id)
+                if doc_id in dataset_dictionary:
+                    repeated_file_count += 1
+                    continue
                 dataset_dictionary[doc_id] = {}
                 dataset_dictionary[doc_id][TITLE] = self.remove_punctuation(line[TITLE])
                 dataset_dictionary[doc_id][CONTENT] = self.remove_punctuation(line[CONTENT])
                 dataset_dictionary[doc_id][DATE] = self.remove_punctuation(line[DATE])
                 dataset_dictionary[doc_id][COURT] = self.remove_punctuation(line[COURT])
 
-                stop_words = set(stopwords.words('english'))
 
                 # print("read doc from csv: ")
                 # print(file_count)
@@ -296,6 +313,12 @@ class Indexer:
         #     for doc in postings[word][2]:
         #         print("postings[word][2][" + doc + "]", postings[word][2][doc])
 
+        files_read = total_count - 1
+        print("____________")
+        print(files_read)
+        print(repeated_file_count)
+        print(self.file_count)
+        print("____________")
         print('indexing completed')
 
     def SavetoFile(self):
