@@ -10,3 +10,5 @@ script.sh
 .idea
 venve
 test-index-output.txt
+test-dictionary.txt
+test-postings.txt

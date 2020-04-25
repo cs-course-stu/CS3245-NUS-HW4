@@ -131,7 +131,9 @@ class Indexer:
 
         for i in range(len(words)):
             # Pre-process word
+
             preprocessed_word = ps.stem(words[i])
+
             current_word = preprocessed_word + to_append
             # current_word = words[i].append(toAppend)
 
@@ -189,10 +191,12 @@ class Indexer:
     def remove_punctuation(self, terms):
 
         modified_term = re.sub(r"[,;@#?!&$()%°~^_.+=\"><`|}{*:/]+ *", " ", terms)
+
         return modified_term
 
     def tokenize_and_remove_stopwords(self, input):
         stop_words = set(stopwords.words('english'))
+
 
         token_words = word_tokenize(input)
         lower_token_words = []
@@ -240,8 +244,6 @@ class Indexer:
 
 
                 total_count += 1
-                if total_count == 150:
-                    break
 
                 print("file read")
                 print(total_count)
@@ -251,10 +253,10 @@ class Indexer:
 
                 # Read data in dictionary
                 doc_id = line[DOC_ID]
-                print(doc_id)
                 if doc_id in dataset_dictionary:
                     repeated_file_count += 1
                     continue
+
                 dataset_dictionary[doc_id] = {}
                 dataset_dictionary[doc_id][TITLE] = self.remove_punctuation(line[TITLE])
                 dataset_dictionary[doc_id][CONTENT] = self.remove_punctuation(line[CONTENT])
@@ -321,6 +323,7 @@ class Indexer:
         print(repeated_file_count)
         print(self.file_count)
         print("____________")
+
         print('indexing completed')
 
     def SavetoFile(self):
