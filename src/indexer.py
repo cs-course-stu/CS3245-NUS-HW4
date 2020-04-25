@@ -5,6 +5,7 @@ import sys
 import pickle
 import math
 import re
+from nltk.corpus import stopwords
 import time
 from nltk.stem.porter import PorterStemmer
 from nltk.tokenize import word_tokenize
@@ -190,6 +191,17 @@ class Indexer:
         modified_term = re.sub(r"[,;@#?!&$()%°~^_.+=\"><`|}{*':/]+ *", " ", terms)
         return modified_term
 
+    def tokenize_and_remove_stopwords(self, input):
+        stop_words = set(stopwords.words('english'))
+        token_words = word_tokenize(input)
+        filtered_words = []
+
+        for word in token_words:
+            if word not in stop_words:
+                filtered_words.append(word)
+
+        print(filtered_words)
+        return filtered_words
 
     def build_index(self, in_dir):
         """
@@ -233,6 +245,8 @@ class Indexer:
                 dataset_dictionary[doc_id][DATE] = self.remove_punctuation(line[DATE])
                 dataset_dictionary[doc_id][COURT] = self.remove_punctuation(line[COURT])
 
+                stop_words = set(stopwords.words('english'))
+
                 # print("read doc from csv: ")
                 # print(file_count)
 
@@ -250,10 +264,10 @@ class Indexer:
             document_term_frequency = {}
 
             # Add words from title to postings
-            self.update_postings(doc_id, document_term_frequency, word_tokenize(dataset_dictionary[doc_id][TITLE]), True)
+            self.update_postings(doc_id, document_term_frequency, self.tokenize_and_remove_stopwords(dataset_dictionary[doc_id][TITLE]), True)
 
             # Add words from content to postings
-            self.update_postings(doc_id, document_term_frequency, word_tokenize(dataset_dictionary[doc_id][CONTENT]), False)
+            self.update_postings(doc_id, document_term_frequency, self.tokenize_and_remove_stopwords(dataset_dictionary[doc_id][CONTENT]), False)
 
             # print("processed doc from csv: ")
             # print(file_count)
