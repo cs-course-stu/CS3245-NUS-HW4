@@ -238,6 +238,7 @@ class Indexer:
             csv_reader = csv.DictReader(input_csv)
             for line in csv_reader:
 
+
                 total_count += 1
                 if total_count == 150:
                     break
@@ -313,9 +314,10 @@ class Indexer:
         #     for doc in postings[word][2]:
         #         print("postings[word][2][" + doc + "]", postings[word][2][doc])
 
-        files_read = total_count - 1
+
+
         print("____________")
-        print(files_read)
+        print(total_count)
         print(repeated_file_count)
         print(self.file_count)
         print("____________")
