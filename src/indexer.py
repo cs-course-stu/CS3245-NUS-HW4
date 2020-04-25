@@ -4,6 +4,7 @@ import os
 import sys
 import pickle
 import math
+import re
 import time
 from nltk.stem.porter import PorterStemmer
 from nltk.tokenize import word_tokenize
@@ -184,6 +185,12 @@ class Indexer:
         for word in self.postings:
             self.postings[word][0] = math.log(self.file_count / float(self.collection_term_frequency[word]), 10)
 
+    def remove_punctuation(self, terms):
+
+        modified_term = re.sub(r"[,;@#?!&$()%°~^_.+=\"><`|}{*':/]+ *", " ", terms)
+        return modified_term
+
+
     def build_index(self, in_dir):
         """
         build index from documents stored in the input directory,
@@ -198,17 +205,17 @@ class Indexer:
         dataset_dictionary = {}
 
         # Increase field_size to handle large input of csv
-        csv.field_size_limit(sys.maxsize)
-        # max_int = sys.maxsize
-        # while True:
-        #     # decrease the maxInt value by factor 10
-        #     # as long as the OverflowError occurs.
-        #
-        #     try:
-        #         csv.field_size_limit(max_int)
-        #         break
-        #     except OverflowError:
-        #         max_int = int(max_int / 10)
+
+        max_int = sys.maxsize
+        while True:
+            # decrease the maxInt value by factor 10
+            # as long as the OverflowError occurs.
+
+            try:
+                csv.field_size_limit(max_int)
+                break
+            except OverflowError:
+                max_int = int(max_int / 10)
 
         # Read input data from csv files
         with open(os.path.join(in_dir), 'r', encoding="utf8") as input_csv:
@@ -221,10 +228,10 @@ class Indexer:
                 # Read data in dictionary
                 doc_id = line[DOC_ID]
                 dataset_dictionary[doc_id] = {}
-                dataset_dictionary[doc_id][TITLE] = line[TITLE]
-                dataset_dictionary[doc_id][CONTENT] = line[CONTENT]
-                dataset_dictionary[doc_id][DATE] = line[DATE]
-                dataset_dictionary[doc_id][COURT] = line[COURT]
+                dataset_dictionary[doc_id][TITLE] = self.remove_punctuation(line[TITLE])
+                dataset_dictionary[doc_id][CONTENT] = self.remove_punctuation(line[CONTENT])
+                dataset_dictionary[doc_id][DATE] = self.remove_punctuation(line[DATE])
+                dataset_dictionary[doc_id][COURT] = self.remove_punctuation(line[COURT])
 
                 # print("read doc from csv: ")
                 # print(file_count)
