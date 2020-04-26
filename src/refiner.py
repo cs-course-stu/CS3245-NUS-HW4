@@ -21,6 +21,7 @@ class QueryInfo:
         self.terms = None
         self.counts = None
         self.tokens = None
+        self.candidates = None
 
 class Refiner:
 
@@ -69,6 +70,20 @@ class Refiner:
 
         # step 4: get the postings lists of total terms
         postings_lists = self.indexer.LoadTerms(total_terms)
+        """
+        postings_lists = {
+            'into'    : (4, np.array([0, 1, 3, 5]), np.array([1, 5, 6, 1]), [np.array([5, ])] ),
+            'queri'   : (1, np.array([0, ])       , np.array([5, ])       , [np.array([3, ])] ),
+            'can'     : (3, np.array([0, 7, 9])   , np.array([1,10, 3, 1]), [np.array([1, ])] ),
+            'term'    : (4, np.array([0, 2, 4, 6]), np.array([1, 5, 6,10]), [np.array([6, ])] ),
+            'refin'   : (2, np.array([0, 8])      , np.array([1, 3])      , [np.array([0, ])] ),
+            'token'   : (4, np.array([0, 1, 4, 7]), np.array([1, 7, 6, 3]), [np.array([2, 8])]),
+            'string'  : (4, np.array([0, 2, 5, 8]), np.array([1, 5, 6, 1]), [np.array([4, ])] ),
+            'and'     : (4, np.array([0, 3, 6, 9]), np.array([1, 3, 6, 9]), [np.array([7, ])] ),
+            'scienc'  : (4, np.array([5, ]),        np.array([1]),          [np.array([7, ])] ),
+            'comput'  : (4, np.array([5, ]),        np.array([1]),          [np.array([8, ])] )
+        }
+        """
 
         # step 5: construct query vector
         self._get_query_vector(query_infos, postings_lists)
@@ -174,8 +189,8 @@ class Refiner:
             # step 2: get the doc vectors
             for i, term in enumerate(terms):
                 postings_list = postings_lists[term]
-                postings = postings_list[0]
-                weights = postings_list[1]
+                postings = postings_list[1]
+                weights = postings_list[2]
 
                 weight = 0
                 for j in range(0, len(postings)):
@@ -249,9 +264,6 @@ class Refiner:
         postings_lists: the dictionary with terms to postings lists mapping
     """
     def _get_query_vector(self, query_infos, postings_lists):
-        # N = len(self.indexer.total_doc) + 1
-        N = 1000
-
         for query_info in query_infos:
             # step 1: initlization
             length = 0
@@ -262,19 +274,16 @@ class Refiner:
             # step 2: calculate weights by using tf-idf
             for i, term in enumerate(terms):
                 tf = 1 + math.log(counts[i])
-                df = len(postings_lists[term][0])
-                idf = math.log(N / df) if df else 0
+                idf = postings_lists[term][0]
                 weight = tf * idf
 
                 query_vector[i] = weight
                 length += weight * weight
 
             # step 3: normalize the query vector
+            length = np.linalg.norm(query_vector)
             if length > 0:
-                length = math.sqrt(length)
-
-            for i in range(0, len(terms)):
-                query_vector[i] /= length
+                query_vector /= length
 
             # step 4: update query_info
             query_info.query_vector = query_vector
@@ -287,16 +296,16 @@ if __name__ == '__main__':
          'term', 'and', 'comput', 'scienc', 'computing_machin', 'scientific_disciplin', 'tranquil']
     counts = [1, 1, 2, 1, 1, 1, 1, 1]
     postings_lists = {
-        'into'    : (np.array([0, 1, 3, 5]), np.array([1, 5, 6, 1]), [np.array([5, ])] ),
-        'queri'   : (np.array([0, ])       , np.array([5, ])       , [np.array([3, ])] ),
-        'can'     : (np.array([0, 7, 9])   , np.array([1,10, 3, 1]), [np.array([1, ])] ),
-        'term'    : (np.array([0, 2, 4, 6]), np.array([1, 5, 6,10]), [np.array([6, ])] ),
-        'refin'   : (np.array([0, 8])      , np.array([1, 3])      , [np.array([0, ])] ),
-        'token'   : (np.array([0, 1, 4, 7]), np.array([1, 7, 6, 3]), [np.array([2, 8])]),
-        'string'  : (np.array([0, 2, 5, 8]), np.array([1, 5, 6, 1]), [np.array([4, ])] ),
-        'and'     : (np.array([0, 3, 6, 9]), np.array([1, 3, 6, 9]), [np.array([7, ])] ),
-        'scienc'  : (np.array([0, 3, 6, 9]), np.array([1, 3, 6, 9]), [np.array([7, ])] ),
-        'comput'  : (np.array([0, 3, 6, 9]), np.array([1, 3, 6, 9]), [np.array([7, ])] )
+        'into'    : (4, np.array([0, 1, 3, 5]), np.array([1, 5, 6, 1]), [np.array([5, ])] ),
+        'queri'   : (1, np.array([0, ])       , np.array([5, ])       , [np.array([3, ])] ),
+        'can'     : (3, np.array([0, 7, 9])   , np.array([1,10, 3, 1]), [np.array([1, ])] ),
+        'term'    : (4, np.array([0, 2, 4, 6]), np.array([1, 5, 6,10]), [np.array([6, ])] ),
+        'refin'   : (2, np.array([0, 8])      , np.array([1, 3])      , [np.array([0, ])] ),
+        'token'   : (4, np.array([0, 1, 4, 7]), np.array([1, 7, 6, 3]), [np.array([2, 8])]),
+        'string'  : (4, np.array([0, 2, 5, 8]), np.array([1, 5, 6, 1]), [np.array([4, ])] ),
+        'and'     : (4, np.array([0, 3, 6, 9]), np.array([1, 3, 6, 9]), [np.array([7, ])] ),
+        'scienc'  : (4, np.array([0, 3, 6, 9]), np.array([1, 3, 6, 9]), [np.array([7, ])] ),
+        'comput'  : (4, np.array([0, 3, 6, 9]), np.array([1, 3, 6, 9]), [np.array([7, ])] )
     }
 
     test = 'expand' if len(sys.argv) == 1 else sys.argv[1]

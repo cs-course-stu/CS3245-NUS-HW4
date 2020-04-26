@@ -329,7 +329,7 @@ class Indexer:
         # print('position:', indexer.postings[key][3])
         if not self.file_handle:
             self.file_handle = open(self.postings_file, 'rb')
-        
+
         rst = {}
         for term in terms:
             if term in self.dictionary:
@@ -347,16 +347,10 @@ class Indexer:
                 #     ret[term] = (doc, log_tf, )
 
             else:
-                idf = np.empty(shape=(0, ), dtype=np.float32)
                 doc = np.empty(shape=(0, ), dtype=np.int32)
                 tfs = np.empty(shape=(0, ), dtype=np.float32)
-                position = np.empty(shape=(0, ), dtype=object)
-                # if self.phrasal_query:
 
-                #     ret[term] = (doc, log_tf, position)
-                # else:
-                #     ret[term] = (doc, log_tf, )
-                rst[term] = (idf, doc, tfs, position)
+                rst[term] = (0, doc, tfs, [])
 
         return rst
 
