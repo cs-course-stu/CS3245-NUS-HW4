@@ -81,6 +81,7 @@ TODO: remove Essay.txt if we are not doing it (probably not right)
 * ESSAY.txt: This file contains essay questions mentioned on HW#3
 * dictionary.txt: This file is generated from index.py, which contains info of average length of documents, length of each document, information of fields as well as position of terms' posting list in postings.txt.
 * postings.txt: This file is generated from index.py, which contains idf, doc_id, normalised weighted tf and position of each term in each document.
+* BONUS.docx: This file contains query expansion techniques we have implemented
 
 == Statement of individual work ==
 
