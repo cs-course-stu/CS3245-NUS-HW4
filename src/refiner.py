@@ -6,7 +6,7 @@ import nltk
 import array
 import heapq
 import numpy as np
-# from indexer import Indexer
+from indexer import Indexer
 from nltk.corpus import stopwords, wordnet
 from collections import defaultdict
 from nltk.stem.porter import PorterStemmer

@@ -1,21 +1,21 @@
-import csv
-import numpy as np
 import os
-import sys
-import pickle
-import math
 import re
-from nltk.corpus import stopwords
+import sys
+import csv
+import math
 import time
-from nltk.stem.porter import PorterStemmer
+import pickle
+import numpy as np
+from collections import defaultdict
+from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
+from nltk.stem.porter import PorterStemmer
 
 DOC_ID = "document_id"
 TITLE = "title"
 CONTENT = "content"
 DATE = "date_posted"
 COURT = "court"
-
 
 class Indexer:
     """ class Indexer is a class dealing with building index, saving it to file and loading it
@@ -27,45 +27,22 @@ class Indexer:
     def __init__(self, dictionary_file, postings_file):
         self.dictionary_file = dictionary_file
         self.postings_file = postings_file
+
         self.average = 0
         self.total_doc = {}
-        self.file_count = 0
-        self.collection_term_frequency = {}
-        self.court_field = {}
-        self.date_field = {}
-        # dictionary[term] = location in postings.txt
+        self.court_field = defaultdict(lambda: [])
+        self.date_field = defaultdict(lambda: [])
         self.dictionary = {}
+        # dictionary[term] = location in postings.txt
+
+        self.postings = {}
         # postings[term][0] = idf
         # postings[term][1] = list of doc_ids
         # postings[term][2] = list of tf values
-        # postings[term][3][doc_id] = list of positions
-        self.postings = {}
+        # postings[term][3] = lists of positions
 
-    def generate_court_field(self, dataset_dict):
-        """
-        Method to generate the postings list of documents for the court field. key is
-        court name and value is the list of documents that are in court.
-        """
-
-        # Store court as field
-        court_field_dict = {}
-
-        # For each document
-        for doc_key in dataset_dict:
-
-            # Get court name and make it key of court dict
-            court_name = dataset_dict[doc_key][COURT]
-
-            # Append doc_id in contents
-            if court_name not in court_field_dict:
-                court_field_dict[court_name] = list()
-            court_field_dict[court_name].append(doc_key)
-
-            # sort doc ids in value
-            for key in court_field_dict:
-                court_field_dict[key] = sorted(court_field_dict[key])
-
-            return court_field_dict
+        self.ps = PorterStemmer()
+        self.stop_words = set(stopwords.words('english'))
 
     def get_date_from_title(self, title):
         """
@@ -91,31 +68,7 @@ class Indexer:
         year = "".join(list_year)
         return year
 
-    def generate_date_field(self, data_dict):
-        """
-        Method to generate the postings list of documents for the court field. key is
-        court name and value is the list of documents that are in court.
-        """
-
-        # Store year from title as field
-        date_dictionary = {}
-        for doc_key in data_dict:
-
-            # Get title field
-            title = data_dict[doc_key][TITLE]
-            year = self.get_date_from_title(title)
-            # Append year in contents
-            if year not in date_dictionary:
-                date_dictionary[year] = list()
-            date_dictionary[year].append(doc_key)
-
-        # sort doc ids in value
-        for key in date_dictionary:
-            date_dictionary[key] = sorted(date_dictionary[key])
-
-        return date_dictionary
-
-    def update_postings(self, doc_id, document_term_frequency, words, is_title):
+    def update_postings(self, doc_id, doc_terms, words, is_title):
         """
         Method parses words in given sentence and updates postings list
         """
@@ -126,33 +79,28 @@ class Indexer:
             to_append = ".content"
             self.average += len(words)
 
-        # Initialise PorterStemmer
-        ps = PorterStemmer()
-
-        for i in range(len(words)):
+        for i, word in enumerate(words):
             # Pre-process word
-
-            preprocessed_word = ps.stem(words[i])
-
+            preprocessed_word = self.ps.stem(word)
             current_word = preprocessed_word + to_append
-            # current_word = words[i].append(toAppend)
 
-            if current_word not in self.postings:
-                self.postings[current_word] = []
-                self.postings[current_word].append(None)
-                self.postings[current_word].append([])
-                self.postings[current_word].append([])
-                self.postings[current_word].append({})
-            if doc_id not in self.postings[current_word][1]:
-                self.postings[current_word][1].append(doc_id)
-                self.postings[current_word][2].append(None)
-                self.postings[current_word][3][doc_id] = []
-            self.postings[current_word][3][doc_id].append(i)
-            if current_word not in document_term_frequency:
-                document_term_frequency[current_word] = 0
-            document_term_frequency[current_word] += 1
+            if current_word in self.postings:
+                posting = self.postings[current_word]
 
-    def normalize_weighted_tf(self, term_frequency, doc_id):
+                if current_word not in doc_terms:
+                    posting[1].append(doc_id)
+                    posting[2].append(None)
+                    posting[3].append([i])
+                else:
+                    posting[3][-1].append(i)
+            else:
+                self.postings[current_word] = [None, [doc_id], [None], [[i]]]
+
+            doc_terms[current_word] += 1
+
+        self.total_doc[doc_id] = len(words)
+
+    def normalize_weighted_tf(self, doc_id, doc_terms):
         """
         normalize weighted term frequency by dividing all term frequency
         with square root(sum of all(square(each term frequency)))
@@ -160,33 +108,42 @@ class Indexer:
         to_be_divided_by = 0
 
         # Obtain sum of the square of all term frequency
-        for word in term_frequency:
-            term_frequency[word] = math.log(term_frequency[word], 10) + 1
-            to_be_divided_by += term_frequency[word] ** 2
+        for term in doc_terms:
+            doc_terms[term] = math.log(doc_terms[term]) + 1
+            to_be_divided_by += doc_terms[term] ** 2
 
         to_be_divided_by = math.sqrt(float(to_be_divided_by))
-        self.total_doc[doc_id] = to_be_divided_by
 
         # Normalize each term frequency value
-        for word in term_frequency:
-            self.postings[word][2][self.postings[word][1].index(doc_id)] = float(term_frequency[word]) / to_be_divided_by
-
-    def update_collection_tf(self, document_term_frequency):
-        for word in document_term_frequency:
-            if word not in self.collection_term_frequency:
-                self.collection_term_frequency[word] = 0
-            self.collection_term_frequency[word] += document_term_frequency[word]
+        for term in doc_terms:
+            self.postings[term][2][-1] = float(doc_terms[term]) / to_be_divided_by
 
     def convert_lists_to_nparrays(self):
+        for key in self.court_field:
+            self.court_field[key] = np.array(self.court_field[key])
+            np.sort(self.court_field[key])
+
+        self.court_field = dict(self.court_field)
+
+        for key in self.date_field:
+            self.date_field[key] = np.array(self.date_field[key])
+            np.sort(self.date_field[key])
+
+        self.date_field = dict(self.date_field)
+
         for word in self.postings:
             self.postings[word][1] = np.array(self.postings[word][1])
             self.postings[word][2] = np.array(self.postings[word][2])
-            for doc_id in self.postings[word][3]:
-                self.postings[word][3][doc_id] = np.array(self.postings[word][3][doc_id])
+            for i in range(len(self.postings[word][3])):
+                self.postings[word][3][i] = np.array(self.postings[word][3][i])
 
     def update_idf(self):
+        self.file_count = len(self.total_doc)
+
         for word in self.postings:
-            self.postings[word][0] = math.log(self.file_count / float(self.collection_term_frequency[word]), 10)
+            df = len(self.postings[word][1])
+            idf = math.log(self.file_count / df, 10)
+            self.postings[word][0] = idf
 
     def remove_punctuation(self, terms):
 
@@ -195,9 +152,6 @@ class Indexer:
         return modified_term
 
     def tokenize_and_remove_stopwords(self, input):
-        stop_words = set(stopwords.words('english'))
-
-
         token_words = word_tokenize(input)
         lower_token_words = []
         for words in token_words:
@@ -206,7 +160,7 @@ class Indexer:
         filtered_words = []
 
         for word in lower_token_words:
-            if word not in stop_words:
+            if word not in self.stop_words:
                 filtered_words.append(word)
 
         return filtered_words
@@ -218,14 +172,7 @@ class Indexer:
         """
         print('indexing...')
 
-        repeated_file_count = 0
-        total_count = 0
-
-        # Nested dictionary to store dataset values
-        dataset_dictionary = {}
-
         # Increase field_size to handle large input of csv
-
         max_int = sys.maxsize
         while True:
             # decrease the maxInt value by factor 10
@@ -237,77 +184,64 @@ class Indexer:
             except OverflowError:
                 max_int = int(max_int / 10)
 
+        total_count = 0
+        repeated_file_count = 0
+
         # Read input data from csv files
         with open(os.path.join(in_dir), 'r', encoding="utf8") as input_csv:
             csv_reader = csv.DictReader(input_csv)
             for line in csv_reader:
-
-
                 total_count += 1
-
-                print("file read")
-                print(total_count)
+                if total_count % 100 == 0:
+                    print(total_count)
 
                 if line is None:
                     continue
+                if total_count >= 3:
+                    break
 
-                # Read data in dictionary
+                # Determine whether the document has been processed
                 doc_id = line[DOC_ID]
-                if doc_id in dataset_dictionary:
+                if doc_id in self.total_doc:
                     repeated_file_count += 1
                     continue
 
-                dataset_dictionary[doc_id] = {}
-                dataset_dictionary[doc_id][TITLE] = self.remove_punctuation(line[TITLE])
-                dataset_dictionary[doc_id][CONTENT] = self.remove_punctuation(line[CONTENT])
-                dataset_dictionary[doc_id][DATE] = self.remove_punctuation(line[DATE])
-                dataset_dictionary[doc_id][COURT] = self.remove_punctuation(line[COURT])
+                # remove punctuation for each column
+                line[TITLE] = self.remove_punctuation(line[TITLE])
+                line[CONTENT] = self.remove_punctuation(line[CONTENT])
+                line[DATE] = self.remove_punctuation(line[DATE])
+                line[COURT] = self.remove_punctuation(line[COURT])
 
+                # build index for one doc
+                doc_terms = defaultdict(lambda: 0)
+
+                # Add words from title to postings
+                tokens = self.tokenize_and_remove_stopwords(line[TITLE])
+                self.update_postings(doc_id, doc_terms, tokens, True)
+
+                # Add words from content to postings
+                tokens = self.tokenize_and_remove_stopwords(line[CONTENT])
+                self.update_postings(doc_id, doc_terms, tokens, False)
+
+                # Normalize term frequency for this document and update postings
+                self.normalize_weighted_tf(doc_id, doc_terms)
+
+                # Append court and date fields
+                line[DATE] = self.get_date_from_title(line[TITLE])
+                self.date_field[line[DATE]].append(doc_id)
+                self.court_field[line[COURT]].append(doc_id)
 
                 # print("read doc from csv: ")
                 # print(file_count)
 
-        # Close csv file
-        input_csv.close()
-
-        # Start indexing
-        for doc_id in dataset_dictionary:
-
-            # Update file_count
-            self.file_count += 1
-            print(self.file_count)
-
-            # Initialize term frequency tracker for this document
-            document_term_frequency = {}
-
-            # Add words from title to postings
-            self.update_postings(doc_id, document_term_frequency, self.tokenize_and_remove_stopwords(dataset_dictionary[doc_id][TITLE]), True)
-
-            # Add words from content to postings
-            self.update_postings(doc_id, document_term_frequency, self.tokenize_and_remove_stopwords(dataset_dictionary[doc_id][CONTENT]), False)
-
-            # print("processed doc from csv: ")
-            # print(file_count)
-            # print("______________________________________")
-
-            # Normalize term frequency for this document and update postings
-            self.normalize_weighted_tf(document_term_frequency, doc_id)
-
-            # Update collection_term_frequency
-            self.update_collection_tf(document_term_frequency)
-
         # Set idf values in postings
         self.update_idf()
 
-        # Generate court and date fields
-        self.court_field = self.generate_court_field(dataset_dictionary)
-        self.date_field = self.generate_date_field(dataset_dictionary)
-
-        # Convert lists in postings to numpy arrays
+        # Convert lists in postings and fields to numpy arrays
         self.convert_lists_to_nparrays()
 
         # Calculate average
-        self.average /= len(dataset_dictionary)
+        self.average /= len(self.total_doc)
 
         # for word in sorted(postings):
         #     print(word)
@@ -315,8 +249,6 @@ class Indexer:
         #     print("postings[word][1]", postings[word][1])
         #     for doc in postings[word][2]:
         #         print("postings[word][2][" + doc + "]", postings[word][2][doc])
-
-
 
         print("____________")
         print(total_count)
@@ -341,6 +273,16 @@ class Indexer:
         for key in sorted(self.postings):
             self.dictionary[key] = write_postings.tell()
             pickle.dump(self.postings[key], write_postings)
+            # pickle.dump(self.postings[key][0], write_postings)
+            # pickle.dump(self.postings[key][1], write_postings)
+            # pickle.dump(self.postings[key][2], write_postings)
+            # pickle.dump(self.postings[key][3], write_postings)
+            # np.save(write_postings, self.postings[key][0])
+            # np.save(write_postings, self.postings[key][1])
+            # np.save(write_postings, self.postings[key][2])
+            # np.save(write_postings, self.postings[key][3])
+            # for i in range(len(self.postings[key][3])):
+            #     np.save(write_postings, self.postings[key][3][i])
 
         # Pickle dictionary
         pickle.dump(self.average, write_dictionary)
@@ -383,3 +325,22 @@ class Indexer:
         postings_lists = {}
 
         return postings_lists
+
+if __name__ == '__main__':
+    indexer = Indexer('test-dictionary.txt', 'test-postings.txt')
+
+    start = time.time()
+    indexer.build_index('../../dataset.csv')
+    mid = time.time()
+    indexer.SavetoFile()
+    end = time.time()
+
+    print('build time: ' + str(mid - start))
+    print('dump time: ' + str(end - mid))
+
+    for key in indexer.postings:
+        print('key:', key)
+        print('idf:', indexer.postings[key][0])
+        print('doc:', indexer.postings[key][1])
+        print('tfs:', indexer.postings[key][2])
+        print('position:', indexer.postings[key][3])
