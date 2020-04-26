@@ -149,7 +149,7 @@ class Indexer:
 
     def remove_punctuation(self, terms):
 
-        modified_term = re.sub(r"[¨\¨▪¢→◘●◦‹⋅‐\‐\‐¸′″¥‒\‒€«»∃­…–：·,•;·§@§#?˚!&$(¶)%°~^_\­.+‑=一‘©÷−\"\[\-\]\\><`|}’{'â£*:/—“”]+ *", " ", terms)
+        modified_term = re.sub(r"[▲☺♀�►↓�↑ã‰ã¯ã‰├│\─\─¡±¦​₤®‛،―\―„▼■™¨\¨▪¢→◘●◦‹⋅‐\‐\‐¸′″¥‒\‒€«»∃­…–：·,•;·§@§#?˚!&$(¶)%°~^_\­.+‑=一‘©÷−\"\[\-\]\\><`|}’{'â£*:/—“”]+ *", " ", terms)
 
         return modified_term
 
@@ -166,7 +166,7 @@ class Indexer:
             if word not in self.stop_words:
                 filtered_words.append(word)
             if not word.isalnum():
-                print("GGGGG")
+                print("GGGGGGGGGGGGGGG")
                 print(word)
 
         return filtered_words
@@ -201,8 +201,15 @@ class Indexer:
                 if line is None:
                     continue
 
+                if total_count >= 8500:
+                    break
+
                 total_count += 1
                 print(total_count)
+                if total_count < 6500:
+                    continue
+
+
 
                 # Determine whether the document has been processed
                 doc_id = int(line[DOC_ID])
