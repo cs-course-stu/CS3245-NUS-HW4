@@ -4,6 +4,7 @@ import sys
 import csv
 import math
 import time
+import vbcode
 import pickle
 import numpy as np
 from collections import defaultdict
@@ -90,13 +91,11 @@ class Indexer:
                 posting = self.postings[current_word]
 
                 if current_word not in doc_terms:
-                    posting[1].append(doc_id)
-                    posting[2].append(None)
-                    posting[3].append([i])
+                    posting[1].append([doc_id, None, [i]])
                 else:
-                    posting[3][-1].append(i)
+                    posting[1][-1][2].append(i)
             else:
-                self.postings[current_word] = [None, [doc_id], [None], [[i]]]
+                self.postings[current_word] = [None, [[doc_id, None, [i]]]]
 
             doc_terms[current_word] += 1
 
@@ -118,7 +117,7 @@ class Indexer:
 
         # Normalize each term frequency value
         for term in doc_terms:
-            self.postings[term][2][-1] = float(doc_terms[term]) / to_be_divided_by
+            self.postings[term][1][-1][1] = float(doc_terms[term]) / to_be_divided_by
 
     def convert_lists_to_nparrays(self):
         for key in self.court_field:
@@ -134,10 +133,20 @@ class Indexer:
         self.date_field = dict(self.date_field)
 
         for word in self.postings:
-            self.postings[word][1] = np.array(self.postings[word][1])
-            self.postings[word][2] = np.array(self.postings[word][2])
-            for i in range(len(self.postings[word][3])):
-                self.postings[word][3][i] = np.array(self.postings[word][3][i])
+            tmp = np.array(self.postings[word][1], dtype=object)
+
+            for i in range(len(tmp)):
+                tmp[i][2] = np.array(tmp[i][2])
+
+            tmp = tmp[tmp[:, 0].argsort()]
+
+            doc = np.array(tmp[:, 0], dtype=np.int32)
+            tf = np.array(tmp[:, 1], dtype=np.float32)
+            position = np.array(tmp[:, 2])
+
+            self.postings[word][1] = doc
+            self.postings[word].append(tf)
+            self.postings[word].append(position)
 
     def update_idf(self):
         self.file_count = len(self.total_doc)
@@ -199,7 +208,12 @@ class Indexer:
                     continue
 
                 total_count += 1
-                print(total_count)
+
+                if total_count >= 500:
+                    break;
+
+                if total_count % 100 == 0:
+                    print(total_count)
 
                 # Determine whether the document has been processed
                 doc_id = int(line[DOC_ID])
@@ -278,7 +292,18 @@ class Indexer:
         # Set dictionary with idf values and pointers to postings, pickle postings
         for key in sorted(self.postings):
             self.dictionary[key] = write_postings.tell()
-            pickle.dump(self.postings[key], write_postings)
+            pickle.dump(self.postings[key][0], write_postings)
+
+            bs = vbcode.encode(self.postings[key][1])
+            pickle.dump(bs, write_postings)
+
+            # bs = vbcode.encode(self.postings[key][2])
+            pickle.dump(self.postings[key][2], write_postings)
+            for i in range(len(self.postings[key][3])):
+                bs = vbcode.encode(self.postings[key][3][i])
+                pickle.dump(bs, write_postings)
+
+            # pickle.dump(self.postings[key], write_postings)
             # pickle.dump(self.postings[key][0], write_postings)
             # pickle.dump(self.postings[key][1], write_postings)
             # pickle.dump(self.postings[key][2], write_postings)
@@ -295,6 +320,7 @@ class Indexer:
         # pickle.dump(self.total_doc, write_dictionary)
         # pickle.dump(self.court_field, write_dictionary)
         pickle.dump(self.date_field, write_dictionary)
+        print(self.dictionary)
         pickle.dump(self.dictionary, write_dictionary)
 
         # Close all files
@@ -339,8 +365,16 @@ class Indexer:
             if term in self.dictionary:
                 self.file_handle.seek(self.dictionary[term])
                 # load postings and position
-                info = np.load(self.file_handle, allow_pickle=True)
-                rst[term] = tuple(info)
+
+                idf = pickle.load(self.file_handle)
+                doc = vbcode.decode(pickle.load(self.file_handle))
+                tfs = pickle.load(self.file_handle)
+                positions = []
+                for i in range(len(doc)):
+                    tmp = vbcode.decode(pickle.load(self.file_handle))
+                    positions.append(tmp)
+
+                rst[term] = (idf, doc, tfs, positions)
                 # log_tf = np.load(self.file_handle, allow_pickle=True)
 
                 # # load position
