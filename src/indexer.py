@@ -209,9 +209,6 @@ class Indexer:
 
                 total_count += 1
 
-                if total_count >= 500:
-                    break;
-
                 if total_count % 100 == 0:
                     print(total_count)
 
@@ -320,7 +317,6 @@ class Indexer:
         # pickle.dump(self.total_doc, write_dictionary)
         # pickle.dump(self.court_field, write_dictionary)
         pickle.dump(self.date_field, write_dictionary)
-        print(self.dictionary)
         pickle.dump(self.dictionary, write_dictionary)
 
         # Close all files
