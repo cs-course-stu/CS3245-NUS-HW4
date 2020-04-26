@@ -122,6 +122,15 @@ class Refiner:
         # step 4: return query_infos
         return query_infos
 
+    """ Generate synonyms given word via wordnet
+
+    Args:
+        word: the word to be processed
+        dictionary: the dictionary got from index part
+
+    Returns:
+        list(syn): the list of synonyms and word itself
+    """
     def _generate_thesauri(self, word, dictionary):
         syn = set()
         syn.add(word.lower())
@@ -138,6 +147,14 @@ class Refiner:
                 break
         return list(syn)
 
+    """ expand query by adding synonyms
+
+    Args:
+        query_infos: queries to be processed
+
+    Returns:
+        query_infos: processed queries
+    """
     def _expand(self, query_infos):
         dictionary = self.indexer.dictionary
 
@@ -155,7 +172,6 @@ class Refiner:
                     i += 1
                 query_info.query = new_query
         return query_infos
-
 
     """ Perform Relevance Feedback based on Rocchio Algorithm
 
