@@ -142,7 +142,7 @@ class Refiner:
     def _expand(self, query_infos, terms):
         # step 1: expand every single query by using wordnet
         for query_info in query_infos:
-            if (query_info.is_phrase == True):
+            if (query_info.is_phrase == False):
                 tokens = [
                     word for word in nltk.word_tokenize(query_info.query)
                 ]
