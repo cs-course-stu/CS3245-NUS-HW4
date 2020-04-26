@@ -37,7 +37,7 @@ class Searcher:
 
         self.stemmer = PorterStemmer()
         self.indexer = Indexer(dictionary_file, postings_file)
-        self.refiner = Refiner(self.indexer, expand=expand, feedback=feedback)
+        self.refiner = Refiner(indexer=self.indexer, expand=expand, feedback=feedback)
 
         self.average, self.total_doc, self.dictionary, self.date_field, self.dictionary = self.indexer.LoadDict()
 
@@ -115,7 +115,7 @@ class Searcher:
 
             # step 4: update total scores
             for doc in scores:
-                total_scores[doc] *= scores[doc]
+                total_scores[doc] += scores[doc]
 
         # step 4: get the topK docs from the heap
         heap = [(total_scores[doc], -doc) for doc in total_scores]
@@ -145,6 +145,7 @@ class Searcher:
 
             if len(terms) == 0:
                query_info.candidates = []
+               continue
 
             # optimize the order of the merge
             costs = []
@@ -179,7 +180,7 @@ class Searcher:
                 result = temp
 
             # update the candidates
-            query_info.candidates = list(result)
+            query_info.candidates = set(result)
 
     """ Judging whether candidate documents contain the phrase
 
@@ -198,7 +199,7 @@ class Searcher:
                 continue
 
             positions = defaultdict(lambda: [])
-            candidates = set(query_info.candidates)
+            candidates = query_info.candidates
 
             # get postions for docs
             for i, token in enumerate(tokens):
@@ -251,19 +252,35 @@ class Searcher:
                             flag = True
                             break
 
-                    if flag:
-                        ans.add(doc)
+                if flag:
+                    ans.add(doc)
 
                 query_info.candidates = ans
 
 if __name__ == '__main__':
     # Create a Searcher
-    searcher = Searcher('dictionary.txt', 'postings.txt', score=True)
+    searcher = Searcher('test-dictionary.txt', 'test-postings.txt', score=True)
 
-    query = '"Computer Science" AND Refiner can tokenize query strings into terms and tokens'
-    relevant_docs = [0, 5]
+    test_cases = [
+        {"query": '"Computer Science" AND Refiner can tokenize query strings into terms and tokens',
+         "relevant_docs": [0, 5] },
+        {"query": '"Computer Science" AND Refiner can tokenize query strings into terms and tokens',
+         "relevant_docs": [0] },
+        {"query": '"Computer Science" AND Refiner can tokenize query strings into terms and tokens',
+         "relevant_docs": [5] },
+        {"query": '"Computer Science" AND Refiner can tokenize query strings into terms and tokens',
+         "relevant_docs": []},
+        {"query": '"Computer Science"',
+         "relevant_docs": [] }
+    ]
 
-    result, score = searcher.search(query, relevant_docs)
-
-    print(result)
-    print(score)
+    for i, test_case in enumerate(test_cases):
+        query = test_case['query']
+        relevant_docs = test_case['relevant_docs']
+        result, score = searcher.search(query, relevant_docs)
+        print("test case [%d]"%i)
+        print("query:", query)
+        print("relevant_docs", relevant_docs)
+        print("result", result)
+        print("score", score)
+        print("")

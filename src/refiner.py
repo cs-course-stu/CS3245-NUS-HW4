@@ -38,7 +38,7 @@ class Refiner:
         beta: a coefficient of Releance Feedback
     """
     def __init__(self, indexer=None, expand=False, feedback=True,
-                 alpha=0.9, beta=0.1):
+                 alpha=0.8, beta=0.2):
         self.indexer = indexer
         self.expand = expand
         self.feedback = feedback
@@ -70,20 +70,6 @@ class Refiner:
 
         # step 4: get the postings lists of total terms
         postings_lists = self.indexer.LoadTerms(total_terms)
-        """
-        postings_lists = {
-            'into'    : (4, np.array([0, 1, 3, 5]), np.array([1, 5, 6, 1]), [np.array([5, ])] ),
-            'queri'   : (1, np.array([0, ])       , np.array([5, ])       , [np.array([3, ])] ),
-            'can'     : (3, np.array([0, 7, 9])   , np.array([1,10, 3, 1]), [np.array([1, ])] ),
-            'term'    : (4, np.array([0, 2, 4, 6]), np.array([1, 5, 6,10]), [np.array([6, ])] ),
-            'refin'   : (2, np.array([0, 8])      , np.array([1, 3])      , [np.array([0, ])] ),
-            'token'   : (4, np.array([0, 1, 4, 7]), np.array([1, 7, 6, 3]), [np.array([2, 8])]),
-            'string'  : (4, np.array([0, 2, 5, 8]), np.array([1, 5, 6, 1]), [np.array([4, ])] ),
-            'and'     : (4, np.array([0, 3, 6, 9]), np.array([1, 3, 6, 9]), [np.array([7, ])] ),
-            'scienc'  : (4, np.array([5, ]),        np.array([1]),          [np.array([7, ])] ),
-            'comput'  : (4, np.array([5, ]),        np.array([1]),          [np.array([8, ])] )
-        }
-        """
 
         # step 5: construct query vector
         self._get_query_vector(query_infos, postings_lists)
@@ -209,7 +195,9 @@ class Refiner:
                 query_vector += doc_vector
 
             # step 3: normalize the query vector
-            query_vector /= np.linalg.norm(query_vector)
+            length = np.linalg.norm(query_vector)
+            if length:
+                query_vector /= np.linalg.norm(query_vector)
 
     """ Tokenize the all the queries in the query_infos
 
@@ -231,8 +219,14 @@ class Refiner:
                 for word in nltk.word_tokenize(sent)
             ]
 
-            # step 2: stem the tokens
-            tokens = [self.stemmer.stem(token.lower()) for token in tokens]
+            # step 2: stem the tokens and remove stop words
+            tmp = []
+            for token in tokens:
+                token = token.lower()
+                if token not in self.indexer.stop_words:
+                    tmp.append(self.stemmer.stem(token))
+
+            tokens = tmp
 
             # step 3: get the term count
             term_count = defaultdict(lambda: 0)

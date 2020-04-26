@@ -77,7 +77,8 @@ class Indexer:
         if is_title:
             to_append = ".title"
         else:
-            to_append = ".content"
+            # to_append = ".content"
+            to_append = ""
             self.average += len(words)
 
         for i, word in enumerate(words):
@@ -200,14 +201,11 @@ class Indexer:
                 if line is None:
                     continue
 
-                if total_count >= 2000:
-                    break
-
                 total_count += 1
                 print(total_count)
 
                 # Determine whether the document has been processed
-                doc_id = line[DOC_ID]
+                doc_id = int(line[DOC_ID])
                 if doc_id in self.total_doc:
                     repeated_file_count += 1
                     continue
@@ -365,7 +363,9 @@ class Indexer:
         return rst
 
 if __name__ == '__main__':
-    indexer = Indexer('dictionary.txt', 'postings.txt')
+    indexer = Indexer('test-dictionary.txt', 'test-postings.txt')
+    indexer.build_index('test.csv')
+    indexer.SavetoFile()
 
     # start = time.time()
     # indexer.build_index('/Users/wangyifan/Google Drive/hw_4/dataset.csv')
@@ -378,10 +378,13 @@ if __name__ == '__main__':
     average, total_doc, court_field, date_field, dictionary = indexer.LoadDict()
     # print(dictionary)
     terms = ['\'s.content','123']
-    print(indexer.LoadTerms(terms))
-    # for key in indexer.postings:
-    #     print('key:', key)
-    #     print('idf:', indexer.postings[key][0])
-    #     print('doc:', indexer.postings[key][1])
-    #     print('tfs:', indexer.postings[key][2])
-    #     print('position:', indexer.postings[key][3])
+    # print(indexer.LoadTerms(terms))
+
+    for key in indexer.postings:
+        if key.find('.title') != -1:
+            continue
+        print('key:', key)
+        print('idf:', indexer.postings[key][0])
+        print('doc:', indexer.postings[key][1])
+        print('tfs:', indexer.postings[key][2])
+        print('position:', indexer.postings[key][3])
