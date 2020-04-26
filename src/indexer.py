@@ -149,7 +149,7 @@ class Indexer:
 
     def remove_punctuation(self, terms):
 
-        modified_term = re.sub(r"[▲☺♀�►↓�↑ã‰ã¯ã‰├│\─\─¡±¦​₤®‛،―\―„▼■™¨\¨▪¢→◘●◦‹⋅‐\‐\‐¸′″¥‒\‒€«»∃­…–：·,•;·§@§#?˚!&$(¶)%°~^_\­.+‑=一‘©÷−\"\[\-\]\\><`|}’{'â£*:/—“”]+ *", " ", terms)
+        modified_term = re.sub(r"[‚¬;□▲☺♀�►↓�↑ã‰ã¯ã‰├│\─\─¡±¦​₤®‛،―\―„▼■™¨\¨▪¢→◘●◦‹⋅‐\‐\‐¸′″¥‒\‒€«»∃­…–：·,•;·§@§#?˚!&$(¶)%°~^_\­.+‑=一‘©÷−\"\[\-\]\\><`|}’{'â£*:/—“”]+ *", " ", terms)
 
         return modified_term
 
@@ -201,12 +201,12 @@ class Indexer:
                 if line is None:
                     continue
 
-                if total_count >= 8500:
+                if total_count >= 12500:
                     break
 
                 total_count += 1
                 print(total_count)
-                if total_count < 6500:
+                if total_count < 10500:
                     continue
 
 
