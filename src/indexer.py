@@ -148,11 +148,12 @@ class Indexer:
 
     def remove_punctuation(self, terms):
 
-        modified_term = re.sub(r"[,;@#?!&$()%°~^_.+=\"><`|}{*:/]+ *", " ", terms)
+        modified_term = re.sub(r"[¨\¨▪¢→◘●◦‹⋅‐\‐\‐¸′″¥‒\‒€«»∃­…–：·,•;·§@§#?˚!&$(¶)%°~^_\­.+‑=一‘©÷−\"\[\-\]\\><`|}’{'â£*:/—“”]+ *", " ", terms)
 
         return modified_term
 
     def tokenize_and_remove_stopwords(self, input):
+
         token_words = word_tokenize(input)
         lower_token_words = []
         for words in token_words:
@@ -163,6 +164,9 @@ class Indexer:
         for word in lower_token_words:
             if word not in self.stop_words:
                 filtered_words.append(word)
+            if not word.isalnum():
+                print("GGGGG")
+                print(word)
 
         return filtered_words
 
@@ -192,19 +196,25 @@ class Indexer:
         with open(os.path.join(in_dir), 'r', encoding="utf8") as input_csv:
             csv_reader = csv.DictReader(input_csv)
             for line in csv_reader:
-                total_count += 1
-                if total_count % 100 == 0:
-                    print(total_count)
 
                 if line is None:
                     continue
-                if total_count >= 3:
+
+                if total_count >= 2000:
                     break
+
+                total_count += 1
+                print(total_count)
 
                 # Determine whether the document has been processed
                 doc_id = line[DOC_ID]
                 if doc_id in self.total_doc:
                     repeated_file_count += 1
+                    continue
+
+                # this document is in chinese
+                if doc_id == "2044863":
+                    total_count -= 1
                     continue
 
                 # remove punctuation for each column
@@ -244,12 +254,12 @@ class Indexer:
         # Calculate average
         self.average /= len(self.total_doc)
 
-        # for word in sorted(postings):
+        # for word in sorted(self.postings):
         #     print(word)
-        #     print("postings[word][0]", postings[word][0])
-        #     print("postings[word][1]", postings[word][1])
-        #     for doc in postings[word][2]:
-        #         print("postings[word][2][" + doc + "]", postings[word][2][doc])
+        #     print("postings[word][0]", self.postings[word][0])
+        #     print("postings[word][1]", self.postings[word][1])
+            # for doc in self.postings[word][2]:
+            #     print("postings[word][2][" + doc + "]", self.postings[word][2][doc])
 
         print("____________")
         print(total_count)
