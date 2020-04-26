@@ -36,6 +36,7 @@ class Indexer:
         # dictionary[term] = location in postings.txt
 
         self.postings = {}
+        self.file_handle = None
         # postings[term][0] = idf
         # postings[term][1] = list of doc_ids
         # postings[term][2] = list of tf values
@@ -322,25 +323,61 @@ class Indexer:
         Returns:
             postings_lists: the postings lists correspond to the terms
         """
-        postings_lists = {}
+        # print('idf:', indexer.postings[key][0])
+        # print('doc:', indexer.postings[key][1])
+        # print('tfs:', indexer.postings[key][2])
+        # print('position:', indexer.postings[key][3])
+        if not self.file_handle:
+            self.file_handle = open(self.postings_file, 'rb')
+        
+        rst = {}
+        for term in terms:
+            if term in self.dictionary:
+                self.file_handle.seek(self.dictionary[term])
+                # load postings and position
+                info = np.load(self.file_handle, allow_pickle=True)
+                rst[term] = tuple(info)
+                # log_tf = np.load(self.file_handle, allow_pickle=True)
 
-        return postings_lists
+                # # load position
+                # if(self.phrasal_query):
+                #     position = np.load(self.file_handle, allow_pickle=True)
+                #     ret[term] = (doc, log_tf, position)
+                # else:
+                #     ret[term] = (doc, log_tf, )
+
+            else:
+                idf = np.empty(shape=(0, ), dtype=np.float32)
+                doc = np.empty(shape=(0, ), dtype=np.int32)
+                tfs = np.empty(shape=(0, ), dtype=np.float32)
+                position = np.empty(shape=(0, ), dtype=object)
+                # if self.phrasal_query:
+
+                #     ret[term] = (doc, log_tf, position)
+                # else:
+                #     ret[term] = (doc, log_tf, )
+                rst[term] = (idf, doc, tfs, position)
+
+        return rst
 
 if __name__ == '__main__':
-    indexer = Indexer('test-dictionary.txt', 'test-postings.txt')
+    indexer = Indexer('dictionary.txt', 'postings.txt')
 
-    start = time.time()
-    indexer.build_index('../../dataset.csv')
-    mid = time.time()
-    indexer.SavetoFile()
-    end = time.time()
+    # start = time.time()
+    # indexer.build_index('/Users/wangyifan/Google Drive/hw_4/dataset.csv')
+    # mid = time.time()
+    # indexer.SavetoFile()
+    # end = time.time()
 
-    print('build time: ' + str(mid - start))
-    print('dump time: ' + str(end - mid))
-
-    for key in indexer.postings:
-        print('key:', key)
-        print('idf:', indexer.postings[key][0])
-        print('doc:', indexer.postings[key][1])
-        print('tfs:', indexer.postings[key][2])
-        print('position:', indexer.postings[key][3])
+    # print('build time: ' + str(mid - start))
+    # print('dump time: ' + str(end - mid))
+    average, total_doc, court_field, date_field, dictionary = indexer.LoadDict()
+    # print(dictionary)
+    terms = ['\'s.content','123']
+    print(indexer.LoadTerms(terms))
+    # for key in indexer.postings:
+    #     print('key:', key)
+    #     print('idf:', indexer.postings[key][0])
+    #     print('doc:', indexer.postings[key][1])
+    #     print('tfs:', indexer.postings[key][2])
+    #     print('position:', indexer.postings[key][3])
