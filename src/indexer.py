@@ -360,16 +360,22 @@ class Indexer:
         return rst
 
 if __name__ == '__main__':
+    # indexer = Indexer('test-dictionary.txt', 'test-postings.txt')
+    # indexer.build_index('test.csv')
+    # indexer.SavetoFile()
+
     indexer = Indexer('test-dictionary.txt', 'test-postings.txt')
-    indexer.build_index('test.csv')
+    start = time.time()
+    indexer.build_index('../../dataset.csv')
+    mid = time.time()
     indexer.SavetoFile()
+    end = time.time()
 
     # start = time.time()
     # indexer.build_index('/Users/wangyifan/Google Drive/hw_4/dataset.csv')
     # mid = time.time()
     # indexer.SavetoFile()
     # end = time.time()
-
     # print('build time: ' + str(mid - start))
     # print('dump time: ' + str(end - mid))
     average, total_doc, court_field, date_field, dictionary = indexer.LoadDict()
