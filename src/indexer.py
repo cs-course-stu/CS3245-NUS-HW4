@@ -291,9 +291,9 @@ class Indexer:
             #     np.save(write_postings, self.postings[key][3][i])
 
         # Pickle dictionary
-        pickle.dump(self.average, write_dictionary)
-        pickle.dump(self.total_doc, write_dictionary)
-        pickle.dump(self.court_field, write_dictionary)
+        # pickle.dump(self.average, write_dictionary)
+        # pickle.dump(self.total_doc, write_dictionary)
+        # pickle.dump(self.court_field, write_dictionary)
         pickle.dump(self.date_field, write_dictionary)
         pickle.dump(self.dictionary, write_dictionary)
 
@@ -312,14 +312,13 @@ class Indexer:
         print('loading dictionary...')
 
         with open(self.dictionary_file, 'rb') as f:
-            self.average = pickle.load(f)
-            self.total_doc = pickle.load(f)
-            self.court_field = pickle.load(f)
+            # self.average = pickle.load(f)
+            # self.total_doc = pickle.load(f)
+            # self.court_field = pickle.load(f)
             self.date_field = pickle.load(f)
             self.dictionary = pickle.load(f)
 
         print('load dictionary successfully!')
-        return self.average, self.total_doc, self.court_field, self.date_field, self.dictionary
 
     def LoadTerms(self, terms):
         """ load multiple postings lists from file
@@ -366,7 +365,8 @@ if __name__ == '__main__':
 
     indexer = Indexer('test-dictionary.txt', 'test-postings.txt')
     start = time.time()
-    indexer.build_index('../../dataset.csv')
+    # indexer.build_index('../../dataset.csv')
+    indexer.build_index('test.csv')
     mid = time.time()
     indexer.SavetoFile()
     end = time.time()
@@ -378,7 +378,7 @@ if __name__ == '__main__':
     # end = time.time()
     # print('build time: ' + str(mid - start))
     # print('dump time: ' + str(end - mid))
-    average, total_doc, court_field, date_field, dictionary = indexer.LoadDict()
+    indexer.LoadDict()
     # print(dictionary)
     terms = ['\'s.content','123']
     # print(indexer.LoadTerms(terms))

@@ -57,13 +57,13 @@ class Refiner:
         query_infos: the list of query info for separate query
         postings_lists: the dictionary with terms to postings lists mapping
     """
-    def refine(self, query, relevant_docs, dictionary):
+    def refine(self, query, relevant_docs):
         # step 1: split the boolean query into separate queries
         query_infos = self._split_query(query)
 
         # step 2: expand all the single queries
         if self.expand:
-            self._expand(query_infos, dictionary)
+            self._expand(query_infos)
 
         # step 3: tokenize all the single queries
         total_terms = self._tokenize(query_infos)
@@ -138,7 +138,9 @@ class Refiner:
                 break
         return list(syn)
 
-    def _expand(self, query_infos, dictionary):
+    def _expand(self, query_infos):
+        dictionary = self.indexer.dictionary
+
         # step 1: expand every single query by using wordnet
         for query_info in query_infos:
             if (query_info.is_phrase == False):
