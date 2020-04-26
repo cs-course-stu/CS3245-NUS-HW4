@@ -69,6 +69,10 @@ class Refiner:
         total_terms = self._tokenize(query_infos)
 
         # step 4: get the postings lists of total terms
+        tmp_terms = total_terms.copy()
+        for term in tmp_terms:
+            total_terms.add(str(term+'.title'))
+        print(total_terms)
         postings_lists = self.indexer.LoadTerms(total_terms)
 
         # step 5: construct query vector
