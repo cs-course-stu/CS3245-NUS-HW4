@@ -60,7 +60,7 @@ class Refiner:
     def refine(self, query, relevant_docs):
         # step 1: split the boolean query into separate queries
         query_infos = self._split_query(query)
-
+        tmp_terms = self._tokenize(query_infos)
         # step 2: expand all the single queries
         if self.expand:
             self._expand(query_infos)
@@ -69,10 +69,8 @@ class Refiner:
         total_terms = self._tokenize(query_infos)
 
         # step 4: get the postings lists of total terms
-        tmp_terms = total_terms.copy()
         for term in tmp_terms:
             total_terms.add(str(term+'.title'))
-        print(total_terms)
         postings_lists = self.indexer.LoadTerms(total_terms)
 
         # step 5: construct query vector
@@ -131,10 +129,8 @@ class Refiner:
             i = 0
             for lemma in synset.lemmas():
                 tmp_stem = self.stemmer.stem(lemma.name().lower())
-                # print(tmp_stem)
                 if (tmp_stem in dictionary):
                     syn.add(lemma.name())  # add the synonyms
-                    # print(lemma.name())
                 if (len(syn) == 2):
                     break
                 i += 1
