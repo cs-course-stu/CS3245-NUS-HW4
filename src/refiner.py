@@ -57,13 +57,13 @@ class Refiner:
         query_infos: the list of query info for separate query
         postings_lists: the dictionary with terms to postings lists mapping
     """
-    def refine(self, query, relevant_docs):
+    def refine(self, query, relevant_docs, dictionary):
         # step 1: split the boolean query into separate queries
         query_infos = self._split_query(query)
 
         # step 2: expand all the single queries
         if self.expand:
-            self._expand(query_infos)
+            self._expand(query_infos, dictionary)
 
         # step 3: tokenize all the single queries
         total_terms = self._tokenize(query_infos)
@@ -120,8 +120,7 @@ class Refiner:
         # step 4: return query_infos
         return query_infos
 
-
-    def _generate_thesauri(self, word, terms):
+    def _generate_thesauri(self, word, dictionary):
         syn = set()
         syn.add(word.lower())
         for synset in wordnet.synsets(word.lower()):
@@ -129,7 +128,7 @@ class Refiner:
             for lemma in synset.lemmas():
                 tmp_stem = self.stemmer.stem(lemma.name().lower())
                 # print(tmp_stem)
-                if (tmp_stem in terms):
+                if (tmp_stem in dictionary):
                     syn.add(lemma.name())  # add the synonyms
                     # print(lemma.name())
                 if (len(syn) == 2):
@@ -139,7 +138,7 @@ class Refiner:
                 break
         return list(syn)
 
-    def _expand(self, query_infos, terms):
+    def _expand(self, query_infos, dictionary):
         # step 1: expand every single query by using wordnet
         for query_info in query_infos:
             if (query_info.is_phrase == False):
@@ -149,7 +148,7 @@ class Refiner:
                 new_query = ""
                 i = 0
                 for token in tokens:
-                    tokens[i] = self._generate_thesauri(token, terms)
+                    tokens[i] = self._generate_thesauri(token, dictionary)
                     new_query = new_query + " ".join(tokens[i]) + " "
                     i += 1
                 query_info.query = new_query

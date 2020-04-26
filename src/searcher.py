@@ -28,7 +28,7 @@ class Searcher:
     """
 
     def __init__(self, dictionary_file, postings_file, rate = 0.01,
-                 expand = False, feedback = True, pivoted = False, score = False):
+                 expand = True, feedback = True, pivoted = False, score = False):
         self.dictionary_file = dictionary_file
         self.postings_file = postings_file
         self.rate = rate
@@ -51,7 +51,7 @@ class Searcher:
     """
     def search(self, query, relevant_docs):
         # step 1: let refiner to refine the query and get query_infos
-        query_infos, postings_lists = self.refiner.refine(query, relevant_docs)
+        query_infos, postings_lists = self.refiner.refine(query, relevant_docs, self.dictionary)
 
         # step 2: get candidate docs that need to rank(phrasal query)
         # step 2-1: get all the docs that contains all the terms in the query
